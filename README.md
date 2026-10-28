@@ -140,3 +140,4 @@ Going live on the existing Neon database:
 - Rate-limit storage is in memory; use a Redis store if you run more than one instance.
 - `SWAGGER_ENABLED=false` in production unless the docs are protected.
 - Expired and revoked sessions are deleted daily at 03:00 (30-day retention).
+# gc-parts-api
