@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+.env
+.env.*
+.pg-test
+test
+.pg-local

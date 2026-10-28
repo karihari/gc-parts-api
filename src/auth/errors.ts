@@ -1,0 +1,13 @@
+export const AUTH_INVALID_CREDENTIALS = 'AUTH_INVALID_CREDENTIALS';
+export const AUTH_USER_DISABLED = 'AUTH_USER_DISABLED';
+export const AUTH_UNAUTHORIZED = 'AUTH_UNAUTHORIZED';
+// The access token is past its expiry: the client should call POST /auth/refresh.
+export const AUTH_ACCESS_TOKEN_EXPIRED = 'AUTH_ACCESS_TOKEN_EXPIRED';
+export const AUTH_SESSION_REVOKED = 'AUTH_SESSION_REVOKED';
+export const AUTH_REFRESH_TOKEN_INVALID = 'AUTH_REFRESH_TOKEN_INVALID';
+// Another tab refreshed a moment ago; retry the original request with the new cookies.
+export const AUTH_REFRESH_CONCURRENT = 'AUTH_REFRESH_CONCURRENT';
+export const AUTH_FORBIDDEN_ROLE = 'AUTH_FORBIDDEN_ROLE';
+export const AUTH_WRONG_CURRENT_PASSWORD = 'AUTH_WRONG_CURRENT_PASSWORD';
+export const AUTH_NEW_PASSWORD_SAME_AS_OLD = 'AUTH_NEW_PASSWORD_SAME_AS_OLD';
+export const AUTH_SESSION_NOT_FOUND = 'AUTH_SESSION_NOT_FOUND';
