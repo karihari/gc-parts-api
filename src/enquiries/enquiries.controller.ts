@@ -1,36 +1,24 @@
-import {
-  Body,
-  Controller,
-  HttpStatus,
-  Logger,
-  Post,
-  ServiceUnavailableException,
-} from '@nestjs/common';
-import { ApiOkResponse, ApiServiceUnavailableResponse, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, HttpStatus, Logger, Post } from '@nestjs/common';
+import { ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { OkResponseDto } from '../auth/dto/auth-response.dto';
 import { AppController } from '../common/decorators/app-controller.decorator';
-import { NotificationsService } from '../notifications/notifications.service';
 import { EnquiryRequestDto } from './dto/enquiry-request.dto';
-
-const ENQUIRY_DELIVERY_FAILED = 'ENQUIRY_DELIVERY_FAILED';
+import { EnquiriesService } from './services/enquiries.service';
 
 @ApiTags('Enquiries')
 @Controller('enquiries')
 export class EnquiriesController {
   private readonly logger = new Logger(EnquiriesController.name);
 
-  constructor(private readonly notifications: NotificationsService) {}
+  constructor(private readonly enquiries: EnquiriesService) {}
 
   @Post()
   @AppController({
-    title: 'Contact form: forwards the enquiry to the shop',
+    title: 'Contact form: saves the enquiry and notifies the shop',
     public: true,
     httpCode: HttpStatus.OK,
     throttle: { limit: 5, ttl: 10 * 60_000 },
-    response: [
-      ApiOkResponse({ type: OkResponseDto }),
-      ApiServiceUnavailableResponse({ description: 'Could not deliver; suggest WhatsApp instead' }),
-    ],
+    response: [ApiOkResponse({ type: OkResponseDto })],
   })
   async send(@Body() body: EnquiryRequestDto): Promise<OkResponseDto> {
     const { website, ...enquiry } = body;
@@ -38,9 +26,7 @@ export class EnquiriesController {
       this.logger.warn('Enquiry dropped by honeypot');
       return { ok: true };
     }
-    // Unlike orders, nothing is stored here, so a failed delivery must be reported.
-    const delivered = await this.notifications.send('gcparts-contact-form', { ...enquiry });
-    if (!delivered) throw new ServiceUnavailableException(ENQUIRY_DELIVERY_FAILED);
+    await this.enquiries.create(enquiry);
     return { ok: true };
   }
 }

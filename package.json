@@ -15,6 +15,7 @@
     "migration:run": "npm run typeorm -- migration:run",
     "migration:revert": "npm run typeorm -- migration:revert",
     "seed": "ts-node -r tsconfig-paths/register ./src/database/seeds/run-seed.ts",
+    "import:products": "ts-node -r tsconfig-paths/register ./src/database/seeds/import-products.ts",
     "db:local": "node scripts/local-db.mjs"
   },
   "license": "UNLICENSED",

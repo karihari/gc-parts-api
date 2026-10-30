@@ -3,4 +3,6 @@ export const ORDER_NOT_FOUND = 'ORDER_NOT_FOUND';
 export const ORDER_PRODUCT_UNAVAILABLE = 'ORDER_PRODUCT_UNAVAILABLE';
 // Not enough stock. Response includes productId, name and available.
 export const ORDER_INSUFFICIENT_STOCK = 'ORDER_INSUFFICIENT_STOCK';
+// A price of 0 means the shop has not set one yet. Response includes productId and name.
+export const ORDER_PRODUCT_NO_PRICE = 'ORDER_PRODUCT_NO_PRICE';
 export const ORDER_ALREADY_CANCELLED = 'ORDER_ALREADY_CANCELLED';

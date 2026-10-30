@@ -7,6 +7,7 @@ function randomHex(length: number): string {
 // Same formats the shop already uses, so old and new rows look alike.
 export const newProductId = () => `GC-${randomHex(8)}`;
 export const newOrderId = () => `ORD-${randomHex(10)}`;
+export const newEnquiryId = () => `MSG-${randomHex(10)}`;
 export const newImageId = () => randomUUID().replace(/-/g, '');
 
 export function slugify(name: string): string {

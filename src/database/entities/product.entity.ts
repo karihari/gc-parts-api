@@ -33,6 +33,11 @@ export class ProductEntity extends TimestampedEntity {
   @Column({ type: 'text' })
   name: string;
 
+  // English name and description; empty means English visitors see the Russian text.
+  @ApiProperty()
+  @Column({ name: 'name_en', type: 'text', default: '' })
+  nameEn: string;
+
   @ApiProperty({ example: 'brakes' })
   @Index('products_category_idx')
   @Column({ type: 'text' })
@@ -75,6 +80,10 @@ export class ProductEntity extends TimestampedEntity {
   @ApiProperty()
   @Column({ type: 'text' })
   description: string;
+
+  @ApiProperty()
+  @Column({ name: 'description_en', type: 'text', default: '' })
+  descriptionEn: string;
 
   @ApiProperty({ type: [Fitment] })
   @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })

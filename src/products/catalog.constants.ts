@@ -8,6 +8,8 @@ export const CATEGORIES = [
   { slug: 'suspension', name: 'Suspension' },
   { slug: 'electrical', name: 'Electrical' },
   { slug: 'body', name: 'Body Parts' },
+  { slug: 'bumpers', name: 'Bumpers' },
+  { slug: 'glass', name: 'Glass & Mirrors' },
   { slug: 'interior', name: 'Interior' },
   { slug: 'exterior', name: 'Exterior' },
   { slug: 'lighting', name: 'Lighting' },

@@ -1,0 +1,1 @@
+export const ENQUIRY_NOT_FOUND = 'ENQUIRY_NOT_FOUND';

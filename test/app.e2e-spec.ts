@@ -614,6 +614,117 @@ describe('orders', () => {
   });
 });
 
+describe('bilingual products and price on request', () => {
+  it('stores English texts and accepts the bumpers and glass categories', async () => {
+    const jar = await login(STAFF);
+    const res = await call({
+      method: 'POST',
+      url: '/api/admin/products',
+      jar,
+      payload: productBody({
+        name: 'Передний бампер',
+        nameEn: 'Front bumper',
+        description: 'Бампер',
+        descriptionEn: 'Bumper cover',
+        category: 'bumpers',
+      }),
+    });
+    expect(res.statusCode).toBe(201);
+    expect(res.json()).toMatchObject({ nameEn: 'Front bumper', descriptionEn: 'Bumper cover' });
+    const glass = await call({
+      method: 'POST',
+      url: '/api/admin/products',
+      jar,
+      payload: productBody({ category: 'glass' }),
+    });
+    expect(glass.statusCode).toBe(201);
+    // English fields are optional: older clients keep working and get empty texts.
+    expect(glass.json()).toMatchObject({ nameEn: '', descriptionEn: '' });
+  });
+
+  it('refuses to order a part without a price', async () => {
+    const jar = await login(STAFF);
+    const created = await call({
+      method: 'POST',
+      url: '/api/admin/products',
+      jar,
+      payload: productBody({ name: 'Hood', price: 0, stock: 1 }),
+    });
+    expect(created.statusCode).toBe(201);
+    const res = await call({
+      method: 'POST',
+      url: '/api/orders',
+      headers: { origin: ORIGIN },
+      payload: {
+        name: 'Ani',
+        phone: '+374 98281116',
+        email: 'ani@x.am',
+        payment: 'cash',
+        items: [{ productId: created.json().id, qty: 1 }],
+      },
+    });
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toMatchObject({ message: 'ORDER_PRODUCT_NO_PRICE', name: 'Hood' });
+    // Nothing was taken from the shelf.
+    const after = await call({
+      method: 'GET',
+      url: `/api/admin/products/${created.json().id}`,
+      jar,
+    });
+    expect(after.json().stock).toBe(1);
+  });
+});
+
+describe('enquiries', () => {
+  const enquiry = (extra: Record<string, unknown> = {}) => ({
+    method: 'POST' as const,
+    url: '/api/enquiries',
+    headers: { origin: ORIGIN },
+    payload: { name: 'Ani', phone: '+374 98281116', email: 'ani@x.am', message: 'Hello', ...extra },
+  });
+
+  it('saves a message and lets staff list and resolve it', async () => {
+    const sent = await call(enquiry({ part: 'Hood' }));
+    expect(sent.statusCode).toBe(200);
+    expect(sent.json()).toEqual({ ok: true });
+
+    expect((await call({ method: 'GET', url: '/api/admin/enquiries' })).statusCode).toBe(401);
+
+    const jar = await login(STAFF);
+    const list = await call({ method: 'GET', url: '/api/admin/enquiries?q=Hood', jar });
+    expect(list.statusCode).toBe(200);
+    expect(list.json().data).toHaveLength(1);
+    const [saved] = list.json().data;
+    expect(saved).toMatchObject({ name: 'Ani', part: 'Hood', status: 'New' });
+
+    const done = await call({
+      method: 'PATCH',
+      url: `/api/admin/enquiries/${saved.id}/status`,
+      jar,
+      payload: { status: 'Resolved' },
+    });
+    expect(done.json().status).toBe('Resolved');
+    const open = await call({ method: 'GET', url: '/api/admin/enquiries?status=New&q=Hood', jar });
+    expect(open.json().data).toHaveLength(0);
+
+    const missing = await call({
+      method: 'PATCH',
+      url: '/api/admin/enquiries/MSG-NOSUCH0001/status',
+      jar,
+      payload: { status: 'New' },
+    });
+    expect(missing.statusCode).toBe(404);
+  });
+
+  it('drops spam caught by the honeypot without saving it', async () => {
+    const before = await db.query(`SELECT count(*)::int AS n FROM enquiries`);
+    const res = await call(enquiry({ website: 'http://spam.example' }));
+    expect(res.json()).toEqual({ ok: true });
+    const after = await db.query(`SELECT count(*)::int AS n FROM enquiries`);
+    expect(after[0].n).toBe(before[0].n);
+  });
+});
+
 describe('images', () => {
   const png = Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),

@@ -155,6 +155,7 @@ export class ProductsService {
   private toColumns(dto: ProductRequestDto): Partial<ProductEntity> {
     return {
       name: dto.name,
+      nameEn: dto.nameEn ?? '',
       category: dto.category,
       brand: dto.brand,
       partNumber: dto.partNumber,
@@ -163,6 +164,7 @@ export class ProductsService {
       stock: dto.stock,
       image: dto.image,
       description: dto.description,
+      descriptionEn: dto.descriptionEn ?? '',
       featured: dto.featured ?? false,
       fits: dto.fits.map((f): Fitment => {
         const fit: Fitment = { gen: f.gen, from: f.from, to: f.to };

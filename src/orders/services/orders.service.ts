@@ -12,6 +12,7 @@ import {
   ORDER_ALREADY_CANCELLED,
   ORDER_INSUFFICIENT_STOCK,
   ORDER_NOT_FOUND,
+  ORDER_PRODUCT_NO_PRICE,
   ORDER_PRODUCT_UNAVAILABLE,
 } from '../errors';
 
@@ -51,6 +52,13 @@ export class OrdersService {
       for (const [productId, qty] of qtyById) {
         const product = byId.get(productId);
         if (!product) throw new ProcessingException(ORDER_PRODUCT_UNAVAILABLE, { productId });
+        // A price of 0 means "price on request": the customer has to ask the shop first.
+        if (product.price <= 0) {
+          throw new ProcessingException(ORDER_PRODUCT_NO_PRICE, {
+            productId,
+            name: product.name,
+          });
+        }
         if (product.stock < qty) {
           throw new ProcessingException(ORDER_INSUFFICIENT_STOCK, {
             productId,

@@ -64,6 +64,13 @@ export class ProductRequestDto {
   @MaxLength(160)
   name: string;
 
+  @ApiPropertyOptional({ description: 'English name; empty shows the Russian one' })
+  @Transform(trim)
+  @IsString()
+  @MaxLength(160)
+  @IsOptional()
+  nameEn?: string;
+
   @ApiProperty({ enum: CATEGORY_SLUGS })
   @IsIn(CATEGORY_SLUGS)
   category: string;
@@ -113,6 +120,13 @@ export class ProductRequestDto {
   @IsString()
   @MaxLength(4000)
   description: string;
+
+  @ApiPropertyOptional()
+  @Transform(trim)
+  @IsString()
+  @MaxLength(4000)
+  @IsOptional()
+  descriptionEn?: string;
 
   @ApiProperty({ type: [FitmentDto] })
   @IsArray()

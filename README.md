@@ -51,7 +51,7 @@ src/
   products/        public catalog + search/fitment filters; admin CRUD
   images/          admin photo upload (multipart, magic-byte check); public serving
   orders/          pickup checkout (transactional stock); customer status lookup; admin workflow
-  enquiries/       contact form → Make.com webhook
+  enquiries/       contact form → saved, then Make.com webhook; admin inbox
   notifications/   Make.com webhook client with timeout
   health/          GET /api/health
 ```
@@ -69,7 +69,7 @@ All paths are under `/api`. Everything requires a signed-in admin unless marked 
 | GET | `/images/:id` | public | immutable cache |
 | POST | `/orders` | public, 10 / 10 min / IP | prices from DB, stock in one transaction |
 | POST | `/orders/statuses` | public | `{ ids }` → `[{ id, status }]` only |
-| POST | `/enquiries` | public, 5 / 10 min / IP | honeypot field `website` |
+| POST | `/enquiries` | public, 5 / 10 min / IP | saved, then webhook; honeypot field `website` |
 | POST | `/auth/login` | public, 5 / min / IP | sets cookies |
 | POST | `/auth/refresh` | public (refresh cookie) | rotates tokens |
 | POST | `/auth/logout` | public | revokes this session |
@@ -82,6 +82,8 @@ All paths are under `/api`. Everything requires a signed-in admin unless marked 
 | POST | `/admin/images` | ADMIN, STAFF | multipart field `file`, JPEG/PNG/WebP ≤ 3 MB |
 | GET | `/admin/orders[/:id]`, `/admin/orders/summary` | ADMIN, STAFF | |
 | PATCH | `/admin/orders/:id/status` | ADMIN, STAFF | Cancelled restocks once, then is final |
+| GET | `/admin/enquiries` | ADMIN, STAFF | `status`, `q`, paging |
+| PATCH | `/admin/enquiries/:id/status` | ADMIN, STAFF | `New` / `Resolved` |
 
 Errors are `{ statusCode, error, message }` where `message` is a stable code
 (`AUTH_INVALID_CREDENTIALS`, `ORDER_INSUFFICIENT_STOCK`, …) for the frontend to translate.
@@ -129,6 +131,9 @@ Going live on the existing Neon database:
 1. `npm run migration:run` with `DATABASE_URL` + `DATABASE_SSL=true`. It only adds tables, columns,
    indexes and constraints; existing products and orders stay.
 2. `npm run seed` with `SEED_ADMIN_*` to create the first admin (existing product ids are skipped).
+   To load the full parts list from a CSV export: `npm run import:products -- file.csv` is a dry run;
+   add `--apply` to replace **all** products with the file's rows (prices left empty become 0, shown
+   as "Price on request" and not orderable).
 3. Set `VITE_API_URL` in the frontend's environment (Lovable settings) and `CORS_ORIGINS` here.
 4. Prefer the API on a subdomain of the shop (`api.gcparts.am`) and keep `COOKIE_SAME_SITE=lax`.
    On a different site use `COOKIE_SAME_SITE=none` + `COOKIE_SECURE=true`.

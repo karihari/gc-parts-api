@@ -12,6 +12,12 @@ export enum OrderStatus {
   CANCELLED = 'Cancelled',
 }
 
+// Values match what the shop already stores in enquiries.status.
+export enum EnquiryStatus {
+  NEW = 'New',
+  RESOLVED = 'Resolved',
+}
+
 export enum PaymentMethod {
   CARD = 'card',
   CASH = 'cash',
