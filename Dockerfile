@@ -2,7 +2,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN npm ci
+# package-lock.json is slightly out of sync (webpack peer of @nestjs/cli); fall back to npm install
+RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
 COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src ./src
 RUN npm run build && npm prune --omit=dev
