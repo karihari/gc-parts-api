@@ -22,6 +22,14 @@ describe('validateEnv', () => {
     );
   });
 
+  it('keeps object storage off unless all R2 settings are given', () => {
+    expect(validateEnv(base).R2_BUCKET).toBeUndefined();
+    const r2 = { R2_ACCESS_KEY_ID: 'k', R2_SECRET_ACCESS_KEY: 's', R2_BUCKET: 'media' };
+    expect(() => validateEnv({ ...base, ...r2 })).toThrow(/must be set together/);
+    expect(() => validateEnv({ ...base, R2_BUCKET: 'media' })).toThrow(/must be set together/);
+    expect(validateEnv({ ...base, ...r2, R2_ACCOUNT_ID: 'abc' }).R2_BUCKET).toBe('media');
+  });
+
   it('refuses SameSite=None cookies without Secure', () => {
     expect(() =>
       validateEnv({ ...base, COOKIE_SAME_SITE: 'none', COOKIE_SECURE: 'false' }),

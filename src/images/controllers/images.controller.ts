@@ -1,7 +1,9 @@
 import {
   BadRequestException,
   Controller,
+  Delete,
   Get,
+  HttpStatus,
   Param,
   PayloadTooLargeException,
   Post,
@@ -12,6 +14,7 @@ import {
   ApiBody,
   ApiConsumes,
   ApiCreatedResponse,
+  ApiNoContentResponse,
   ApiOkResponse,
   ApiProperty,
   ApiTags,
@@ -81,6 +84,14 @@ export class ImagesController {
   })
   async serve(@Param() { id }: ImageIdParamsDto, @Res() reply: FastifyReply): Promise<void> {
     const image = await this.images.get(id);
+    if ('redirectTo' in image) {
+      // The bucket has a public address, so Cloudflare's CDN serves the bytes.
+      await reply
+        .header('cache-control', 'public, max-age=86400')
+        .header('cross-origin-resource-policy', 'cross-origin')
+        .redirect(image.redirectTo, 302);
+      return;
+    }
     reply
       .header('content-type', image.contentType)
       // An id is never reused, so the photo can be cached for good.
@@ -88,5 +99,16 @@ export class ImagesController {
       // The shop frontend runs on another origin and must be allowed to show it.
       .header('cross-origin-resource-policy', 'cross-origin')
       .send(image.bytes);
+  }
+
+  @Delete('admin/images/:id')
+  @AppController({
+    title: 'Delete an uploaded photo (refused while a product still shows it)',
+    roles: [AdminRole.ADMIN, AdminRole.STAFF],
+    httpCode: HttpStatus.NO_CONTENT,
+    response: [ApiNoContentResponse()],
+  })
+  async remove(@Param() { id }: ImageIdParamsDto): Promise<void> {
+    await this.images.delete(id);
   }
 }

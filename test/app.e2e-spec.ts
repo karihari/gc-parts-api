@@ -750,6 +750,100 @@ describe('images', () => {
     expect(served.rawPayload.equals(png)).toBe(true);
   });
 
+  it('deletes an unused photo and refuses to delete one a product still shows', async () => {
+    const jar = await login(STAFF);
+    const upload = async () => {
+      const { body, contentType } = multipart('file', 'photo.png', png);
+      const up = await call({
+        method: 'POST',
+        url: '/api/admin/images',
+        jar,
+        headers: { 'content-type': contentType },
+        payload: body,
+      });
+      return up.json() as { id: string; url: string };
+    };
+
+    const unused = await upload();
+    expect(
+      (await call({ method: 'DELETE', url: `/api/admin/images/${unused.id}` })).statusCode,
+    ).toBe(401);
+    const del = await call({ method: 'DELETE', url: `/api/admin/images/${unused.id}`, jar });
+    expect(del.statusCode).toBe(204);
+    expect((await call({ method: 'GET', url: `/api${unused.url}` })).statusCode).toBe(404);
+
+    const used = await upload();
+    const product = await call({
+      method: 'POST',
+      url: '/api/admin/products',
+      jar,
+      payload: productBody({ image: used.url }),
+    });
+    expect(product.statusCode).toBe(201);
+    const refused = await call({ method: 'DELETE', url: `/api/admin/images/${used.id}`, jar });
+    expect(refused.statusCode).toBe(409);
+    expect(refused.json().message).toBe('IMAGE_IN_USE');
+    expect((await call({ method: 'GET', url: `/api${used.url}` })).statusCode).toBe(200);
+  });
+
+  it('keeps extra product photos in order and protects them from deletion', async () => {
+    const jar = await login(STAFF);
+    const upload = async () => {
+      const { body, contentType } = multipart('file', 'photo.png', png);
+      const up = await call({
+        method: 'POST',
+        url: '/api/admin/images',
+        jar,
+        headers: { 'content-type': contentType },
+        payload: body,
+      });
+      return up.json() as { id: string; url: string };
+    };
+    const [cover, second, third] = [await upload(), await upload(), await upload()];
+
+    const created = await call({
+      method: 'POST',
+      url: '/api/admin/products',
+      jar,
+      payload: productBody({ image: cover.url, gallery: [second.url, third.url] }),
+    });
+    expect(created.statusCode).toBe(201);
+    expect(created.json().gallery).toEqual([second.url, third.url]);
+
+    const read = await call({ method: 'GET', url: `/api/products/${created.json().slug}` });
+    expect(read.json()).toMatchObject({ image: cover.url, gallery: [second.url, third.url] });
+
+    // A photo that only appears in a gallery still counts as in use.
+    const refused = await call({ method: 'DELETE', url: `/api/admin/images/${third.id}`, jar });
+    expect(refused.statusCode).toBe(409);
+
+    // Older clients that send no gallery clear it.
+    const updated = await call({
+      method: 'PUT',
+      url: `/api/admin/products/${created.json().id}`,
+      jar,
+      payload: productBody({ image: cover.url }),
+    });
+    expect(updated.json().gallery).toEqual([]);
+    const freed = await call({ method: 'DELETE', url: `/api/admin/images/${third.id}`, jar });
+    expect(freed.statusCode).toBe(204);
+
+    const bad = await call({
+      method: 'POST',
+      url: '/api/admin/products',
+      jar,
+      payload: productBody({ gallery: ['javascript:alert(1)'] }),
+    });
+    expect(bad.statusCode).toBe(400);
+    const tooMany = await call({
+      method: 'POST',
+      url: '/api/admin/products',
+      jar,
+      payload: productBody({ gallery: Array.from({ length: 11 }, () => 'engine') }),
+    });
+    expect(tooMany.statusCode).toBe(400);
+  });
+
   it('rejects an HTML file renamed to .png', async () => {
     const jar = await login(STAFF);
     const { body, contentType } = multipart(
