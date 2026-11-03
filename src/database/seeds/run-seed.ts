@@ -15,6 +15,9 @@ const logger = new Logger('Seed');
 async function seed(): Promise<void> {
   await dataSource.initialize();
   try {
+    if (process.env.SEED_SKIP_PRODUCTS === 'true') {
+      logger.log('SEED_SKIP_PRODUCTS=true; starting products not inserted');
+    } else {
     const result = await dataSource
       .createQueryBuilder()
       .insert()
@@ -32,6 +35,7 @@ async function seed(): Promise<void> {
       .returning(['id'])
       .execute();
     logger.log(`Seeded ${(result.raw as unknown[]).length} of ${SEED_PRODUCTS.length} products`);
+    }
 
     const users = dataSource.getRepository(AdminUserEntity);
     if ((await users.count()) > 0) {
