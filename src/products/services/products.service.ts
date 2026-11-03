@@ -163,6 +163,7 @@ export class ProductsService {
       oldPrice: dto.oldPrice ?? null,
       stock: dto.stock,
       image: dto.image,
+      gallery: dto.gallery ?? [],
       description: dto.description,
       descriptionEn: dto.descriptionEn ?? '',
       featured: dto.featured ?? false,

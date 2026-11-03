@@ -102,7 +102,14 @@ export class ImagesService {
   async delete(id: string): Promise<void> {
     const row = await this.images.findOneBy({ id });
     if (!row) throw new NotFoundException(IMAGE_NOT_FOUND);
-    const inUse = await this.products.exists({ where: { image: `/images/${id}` } });
+    const url = `/images/${id}`;
+    const inUse = await this.products
+      .createQueryBuilder('p')
+      .where('p.image = :url OR p.gallery @> :gallery::jsonb', {
+        url,
+        gallery: JSON.stringify([url]),
+      })
+      .getExists();
     if (inUse) throw new ConflictException(IMAGE_IN_USE);
 
     if (row.storageKey) await this.storage.delete(row.storageKey);

@@ -34,7 +34,14 @@ function fakeStorage(enabled: boolean, publicBase?: string) {
 }
 
 const products = (inUse = false) =>
-  ({ exists: async () => inUse }) as unknown as Repository<ProductEntity>;
+  ({
+    createQueryBuilder: () => ({
+      where() {
+        return this;
+      },
+      getExists: async () => inUse,
+    }),
+  }) as unknown as Repository<ProductEntity>;
 
 describe('ImagesService', () => {
   it('keeps the photo in the database when no bucket is configured', async () => {

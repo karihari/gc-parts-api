@@ -128,6 +128,21 @@ export class ProductRequestDto {
   @IsOptional()
   descriptionEn?: string;
 
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Extra photos after the cover, same forms as image (max 10)',
+  })
+  @IsArray()
+  @ArrayMaxSize(10)
+  @IsString({ each: true })
+  @MaxLength(500, { each: true })
+  @Matches(IMAGE_PATTERN, {
+    each: true,
+    message: 'gallery items must be a bundled key, /images/<id> or an https URL',
+  })
+  @IsOptional()
+  gallery?: string[];
+
   @ApiProperty({ type: [FitmentDto] })
   @IsArray()
   @ArrayMaxSize(20)

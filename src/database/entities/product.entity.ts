@@ -85,6 +85,11 @@ export class ProductEntity extends TimestampedEntity {
   @Column({ name: 'description_en', type: 'text', default: '' })
   descriptionEn: string;
 
+  // More photos after the cover (`image`), in display order. Same forms as `image`.
+  @ApiProperty({ type: [String] })
+  @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
+  gallery: string[];
+
   @ApiProperty({ type: [Fitment] })
   @Column({ type: 'jsonb', default: () => "'[]'::jsonb" })
   fits: Fitment[];
