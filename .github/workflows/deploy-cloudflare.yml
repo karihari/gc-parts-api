@@ -1,0 +1,34 @@
+# Deploys the API (Worker + container from the Dockerfile) to Cloudflare on every push to main.
+# Needs one repository secret: CLOUDFLARE_API_TOKEN.
+name: Deploy to Cloudflare
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_ACCOUNT_ID: c82bb2dc25c1f5f5bcea52b65ae8dbf2
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # Only the deploy tooling; the app itself is built inside Docker from package-lock.json.
+      - name: Install wrangler
+        run: |
+          mkdir -p /tmp/deploy-tools && cd /tmp/deploy-tools
+          npm init -y >/dev/null
+          npm install wrangler@4 @cloudflare/containers
+      - name: Link deploy tooling
+        run: ln -s /tmp/deploy-tools/node_modules node_modules
+      - name: Deploy
+        run: npx wrangler deploy
