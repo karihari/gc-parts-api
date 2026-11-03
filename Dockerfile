@@ -14,8 +14,10 @@ ENV NODE_ENV=production
 COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --chown=node:node package.json ./
+COPY --chown=node:node docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
 USER node
 EXPOSE 4000
 HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://127.0.0.1:${PORT:-4000}/api/health || exit 1
-# Migrations: node node_modules/typeorm/cli.js -d dist/database/data-source.js migration:run
-CMD ["node", "dist/main.js"]
+# Runs migrations (RUN_MIGRATIONS=true), optional first-admin seed, then the API
+CMD ["./docker-entrypoint.sh"]
