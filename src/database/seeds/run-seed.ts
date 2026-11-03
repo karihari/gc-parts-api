@@ -38,6 +38,14 @@ async function seed(): Promise<void> {
     }
 
     const users = dataSource.getRepository(AdminUserEntity);
+    // Login requires a real email address, so an admin saved with something else can never
+    // sign in. Remove such rows so a corrected SEED_ADMIN_EMAIL can create a working admin.
+    const removed = await users
+      .createQueryBuilder()
+      .delete()
+      .where("email NOT LIKE '%_@_%'")
+      .execute();
+    if (removed.affected) logger.warn(`Removed ${removed.affected} admin(s) without a valid email`);
     if ((await users.count()) > 0) {
       logger.log('Admin users already exist; first admin not created');
       return;
