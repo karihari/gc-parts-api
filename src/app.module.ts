@@ -14,6 +14,7 @@ import { ImagesModule } from './images/images.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OrdersModule } from './orders/orders.module';
 import { ProductsModule } from './products/products.module';
+import { StorageModule } from './storage/storage.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -25,6 +26,7 @@ import { UsersModule } from './users/users.module';
     // In-memory storage is per process: use a Redis store when running several instances.
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 120 }]),
     NotificationsModule,
+    StorageModule,
     AuthModule,
     UsersModule,
     ProductsModule,

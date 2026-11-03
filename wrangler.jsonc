@@ -17,7 +17,8 @@
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["ApiContainer"] }],
   // Non-secret settings. Secrets (DATABASE_URL, JWT_ACCESS_SECRET, JWT_REFRESH_SECRET,
-  // SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, MAKE_WEBHOOK_URL) are set in the Cloudflare dashboard.
+  // SEED_ADMIN_EMAIL, SEED_ADMIN_PASSWORD, MAKE_WEBHOOK_URL, and the R2_* settings for photo
+  // storage) are set in the Cloudflare dashboard or synced from GitHub secrets by the deploy workflow.
   "vars": {
     "NODE_ENV": "production",
     "API_PREFIX": "api",

@@ -50,6 +50,7 @@ src/
   users/           admin user management (ADMIN role only)
   products/        public catalog + search/fitment filters; admin CRUD
   images/          admin photo upload (multipart, magic-byte check); public serving
+  storage/         Cloudflare R2 (S3 API) client; photos fall back to the database without it
   orders/          pickup checkout (transactional stock); customer status lookup; admin workflow
   enquiries/       contact form → saved, then Make.com webhook; admin inbox
   notifications/   Make.com webhook client with timeout
@@ -80,6 +81,7 @@ All paths are under `/api`. Everything requires a signed-in admin unless marked 
 | GET / POST / PATCH | `/admin/users[/:id]` | ADMIN | `POST /admin/users/:id/reset-password` |
 | GET / POST / PUT / DELETE | `/admin/products[/:id]` | ADMIN, STAFF | `maxStock` filter for low stock |
 | POST | `/admin/images` | ADMIN, STAFF | multipart field `file`, JPEG/PNG/WebP ≤ 3 MB |
+| DELETE | `/admin/images/:id` | ADMIN, STAFF | 409 `IMAGE_IN_USE` while a product shows it |
 | GET | `/admin/orders[/:id]`, `/admin/orders/summary` | ADMIN, STAFF | |
 | PATCH | `/admin/orders/:id/status` | ADMIN, STAFF | Cancelled restocks once, then is final |
 | GET | `/admin/enquiries` | ADMIN, STAFF | `status`, `q`, paging |
@@ -138,6 +140,23 @@ Going live on the existing Neon database:
 4. Prefer the API on a subdomain of the shop (`api.gcparts.am`) and keep `COOKIE_SAME_SITE=lax`.
    On a different site use `COOKIE_SAME_SITE=none` + `COOKIE_SECURE=true`.
 5. Remove `ADMIN_PASSWORD`, `SESSION_SECRET` and `DATABASE_URL` from the frontend environment.
+
+## Photo storage (Cloudflare R2)
+
+Uploads go to an R2 bucket when the `R2_*` variables are set; otherwise they stay in Postgres as
+before. Products keep the same `/images/<id>` address either way, so nothing in the shop changes.
+R2 is used through its S3 API with access keys (the same approach LPMS uses with S3), because the
+API runs in a container and cannot use Worker bindings.
+
+1. Cloudflare dashboard → R2 → create a bucket (e.g. `gc-parts-media`).
+2. R2 → Manage API tokens → create a token with **Object Read & Write** on that bucket. Copy the
+   Access Key ID and Secret Access Key.
+3. Add GitHub secrets `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`
+   (all four, or none: a partial set stops the API at start). Optional `R2_PUBLIC_URL`: connect a
+   custom domain to the bucket (or enable r2.dev) and use its address; `/images/:id` then
+   redirects there and Cloudflare's CDN serves the photo.
+4. Deploy. Photos already in the database keep working. To move them to the bucket:
+   `npm run images:to-storage` (safe to repeat).
 
 ## Production notes
 

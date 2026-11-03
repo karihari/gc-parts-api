@@ -30,6 +30,15 @@ export interface CookieConfig {
   sameSite: SameSite;
 }
 
+export interface StorageConfig {
+  endpoint: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  bucket: string;
+  // No trailing slash.
+  publicUrl?: string;
+}
+
 export interface AppConfig {
   env: NodeEnv;
   isProduction: boolean;
@@ -43,6 +52,8 @@ export interface AppConfig {
   auth: AuthConfig;
   cookies: CookieConfig;
   makeWebhookUrl?: string;
+  // Missing means uploads stay in the database.
+  storage?: StorageConfig;
 }
 
 export function buildConfig(env: EnvironmentVariables): AppConfig {
@@ -83,5 +94,15 @@ export function buildConfig(env: EnvironmentVariables): AppConfig {
       sameSite: env.COOKIE_SAME_SITE,
     },
     makeWebhookUrl: env.MAKE_WEBHOOK_URL,
+    storage:
+      env.R2_ACCESS_KEY_ID && env.R2_SECRET_ACCESS_KEY && env.R2_BUCKET
+        ? {
+            endpoint: env.R2_ENDPOINT ?? `https://${env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+            accessKeyId: env.R2_ACCESS_KEY_ID,
+            secretAccessKey: env.R2_SECRET_ACCESS_KEY,
+            bucket: env.R2_BUCKET,
+            publicUrl: env.R2_PUBLIC_URL?.replace(/\/+$/, ''),
+          }
+        : undefined,
   };
 }
