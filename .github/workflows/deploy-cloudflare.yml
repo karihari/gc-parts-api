@@ -32,3 +32,23 @@ jobs:
         run: ln -s /tmp/deploy-tools/node_modules node_modules
       - name: Deploy
         run: npx wrangler deploy
+      # Copies the app secrets from GitHub (Settings → Secrets → Actions) to the Worker.
+      # Empty ones are skipped, so a missing GitHub secret never wipes a Cloudflare one.
+      - name: Sync secrets to Cloudflare
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          JWT_ACCESS_SECRET: ${{ secrets.JWT_ACCESS_SECRET }}
+          JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET }}
+          SEED_ADMIN_EMAIL: ${{ secrets.SEED_ADMIN_EMAIL }}
+          SEED_ADMIN_PASSWORD: ${{ secrets.SEED_ADMIN_PASSWORD }}
+          MAKE_WEBHOOK_URL: ${{ secrets.MAKE_WEBHOOK_URL }}
+        run: |
+          node -e '
+            const keys = ["DATABASE_URL","JWT_ACCESS_SECRET","JWT_REFRESH_SECRET","SEED_ADMIN_EMAIL","SEED_ADMIN_PASSWORD","MAKE_WEBHOOK_URL"];
+            const out = {};
+            for (const k of keys) if (process.env[k]) out[k] = process.env[k];
+            require("fs").writeFileSync("/tmp/secrets.json", JSON.stringify(out), { mode: 0o600 });
+            console.log("Syncing:", Object.keys(out).join(", "));
+          '
+          npx wrangler secret bulk /tmp/secrets.json
+          rm -f /tmp/secrets.json
